@@ -17,7 +17,12 @@ pip install google-genai
    > 讓人物自然地看著鏡頭、輕微點頭與眨眼，嘴巴保持閉合不說話，鏡頭固定，8 秒
 3. 下載成 `host_idle.mp4`，上傳到 Google Drive 的 `MyDrive/finreels/`。
 
-之後每天都用同一支待機影片，主播長相就會固定。
+只用一支待機影片：之後每天都用同一支，主播長相、服裝、場景就會固定。
+
+### 想要每天造型不同（服裝／場景／姿勢）
+做好多支待機影片放到 Drive 的 `MyDrive/finreels/looks/`（檔名 `look01_xxx.mp4`…），Colab 第 1 格的 `LOOK` 留空就會依日期自動輪替，也可以填檔名指定。
+生成提示詞、構圖規格與檢查清單見 [`docs/host_looks_prompts.md`](docs/host_looks_prompts.md)。
+`looks/` 沒有檔案時，會退回使用 `host_idle.mp4`。
 
 ## 每天出片
 ```bash
