@@ -1,30 +1,16 @@
 # finreels：台股盤前速報 Reels 產生器
 
-盤前速報 JSON → 口播稿 → Gemini TTS → MuseTalk 對嘴主播 → Remotion 合成 1080×1920 Reels。
+盤前速報 JSON → 口播稿 → Gemini TTS → Remotion 合成 1080×1920 Reels（純資訊卡＋字幕，無主播）。
 
 ## 安裝（一次）
 ```bash
 npm install
 pip install google-genai
 ```
-需要 Node 20+、Python 3.10+、ffmpeg。Remotion 第一次渲染會自動下載 Chrome headless shell。
+需要 Node 20+、Python 3.10+。Remotion 第一次渲染會自動下載 Chrome headless shell。
+Linux 需要中文字型：`sudo apt install fonts-noto-cjk`。
 
-## 一次性：做主播
-1. **角色照片**：在 Gemini App 用圖片生成，例如：
-   > 直式 9:16 寫實照片，台灣年輕女性財經主播，齊肩黑髮，深藍色上衣，半身正面看鏡頭，嘴巴自然閉合，溫暖咖啡廳背景淺景深，柔和均勻光線，手不要擋到臉
-   * 必須是原創臉，不要用真人照片或名人參考圖。
-2. **待機影片**：把照片丟給 Gemini App 的影片生成（Veo），提示：
-   > 讓人物自然地看著鏡頭、輕微點頭與眨眼，嘴巴保持閉合不說話，鏡頭固定，8 秒
-3. 下載成 `host_idle.mp4`，上傳到 Google Drive 的 `MyDrive/finreels/`。
-
-只用一支待機影片：之後每天都用同一支，主播長相、服裝、場景就會固定。
-
-### 想要每天造型不同（服裝／場景／姿勢）
-做好多支待機影片放到 Drive 的 `MyDrive/finreels/looks/`（檔名 `look01_xxx.mp4`…），Colab 第 1 格的 `LOOK` 留空就會依日期自動輪替，也可以填檔名指定。
-生成提示詞、構圖規格與檢查清單見 [`docs/host_looks_prompts.md`](docs/host_looks_prompts.md)。
-`looks/` 沒有檔案時，會退回使用 `host_idle.mp4`。
-
-## 每天出片
+## 每天出片（手動）
 ```bash
 # 1) JSON 存成 data/2026-09-30.json，產生口播稿（可以手動改 narration / highlights）
 npx tsx scripts/export-scenes.ts data/2026-09-30.json build/2026-09-30/scenes.json
@@ -33,16 +19,15 @@ npx tsx scripts/export-scenes.ts data/2026-09-30.json build/2026-09-30/scenes.js
 export GEMINI_API_KEY=你的key
 python scripts/gemini_tts.py build/2026-09-30/scenes.json
 
-# 3) 對嘴：把 voice.wav 上傳到 Drive 的 finreels/2026-09-30/，
-#    在 Colab 開 colab/musetalk_lipsync.ipynb，改 DATE 後執行，
-#    下載 host.mp4 放到 public/2026-09-30/host.mp4
-
-# 4) 把主播接進 props（沿用已錄好的語音，不再呼叫 TTS），然後渲染
-python scripts/gemini_tts.py build/2026-09-30/scenes.json --reuse
+# 3) 渲染
 node render.mjs build/2026-09-30/props.json out/2026-09-30.mp4
 ```
 
-只想先看畫面，可以跳過第 2、3 步：`node render.mjs data/2026-09-30.json out/preview.mp4`（無聲、剪影主播）。
+只想先看畫面，可以跳過第 2 步：`node render.mjs data/2026-09-30.json out/preview.mp4`（無聲、時長用字數估計）。
+
+## 每天出片（自動）
+由 [ig-auto-post](https://github.com/gagahsu/ig-auto-post) 的 `post-reel-to-ig.yml` 負責：讀 Gmail 裡的 `IG_BRIEFING_PAYLOAD` 信 → checkout 本 repo 跑上面 1～3 步 → 上傳影片 → 發布 IG Reels。
+本 repo 只放產生影片的程式，不碰 Gmail 與 Instagram。
 
 ## 常用調整
 | 想改 | 位置 |
@@ -56,6 +41,6 @@ node render.mjs build/2026-09-30/props.json out/2026-09-30.mp4
 | 口播模板、場景順序 | `src/buildScenes.ts` |
 | 單格截圖檢查 | `node render.mjs build/…/props.json out/x.png --still=300` |
 
-## 發布前
-- IG 發文時開啟「AI 生成」標籤。
-- 片尾與底部已固定放免責聲明，不要拿掉。
+## 注意
+- 焦點族群與關鍵點位是用正規表達式解析 `groups_note` 自由文字；解析不到時這兩個場景會略過，`export-scenes` 會印出警告（GitHub Actions 上顯示為黃色 warning）。
+- 片尾與底部已固定放免責聲明，右上角固定標示「AI 自動生成」，不要拿掉。

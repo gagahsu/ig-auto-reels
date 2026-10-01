@@ -5,10 +5,10 @@
   export GEMINI_API_KEY=...
   python scripts/gemini_tts.py build/2026-09-30/scenes.json
   python scripts/gemini_tts.py build/2026-09-30/scenes.json --dry-run   # 不呼叫 API，用合成音測流程
-  python scripts/gemini_tts.py build/2026-09-30/scenes.json --reuse     # 不呼叫 API，沿用已存在的 voice.wav 重新切分
+  python scripts/gemini_tts.py build/2026-09-30/scenes.json --reuse     # 不呼叫 API，沿用已存在的 voice.wav 重新切分（例如改了 scenes.json 的字幕）
 
 輸出：
-  public/2026-09-30/voice.wav     整段語音（Remotion 播放、Colab 對嘴都用這個）
+  public/2026-09-30/voice.wav     整段語音（Remotion 播放用）
   build/2026-09-30/props.json     node render.mjs 直接吃這個
 
 切分方式：場景之間以空行分隔；回來的音訊找出最長的靜音停頓當作場景邊界
@@ -147,7 +147,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("scenes_json")
     ap.add_argument("--dry-run", action="store_true", help="不呼叫 API，用合成音測流程")
-    ap.add_argument("--reuse", action="store_true", help="不呼叫 API，沿用已存在的 voice.wav 重新切分並產生 props（例如放入 host.mp4 之後）")
+    ap.add_argument("--reuse", action="store_true", help="不呼叫 API，沿用已存在的 voice.wav 重新切分並產生 props")
     a = ap.parse_args()
 
     src = Path(a.scenes_json)
@@ -190,12 +190,9 @@ def main():
         "scenes": scenes,
         "tts": {"audio": f"{date}/voice.wav", "durations": durations},
     }
-    host = pub / "host.mp4"
-    if host.exists():
-        props["hostVideo"] = f"{date}/host.mp4"
     out = src.parent / "props.json"
     out.write_text(json.dumps(props, ensure_ascii=False, indent=2), "utf-8")
-    print(f"\n總長 {total:.1f}s → {voice}\nprops → {out}" + ("" if host.exists() else "\n（尚無 host.mp4，主持人會用剪影；對嘴影片放到 " + str(host) + " 後加 --reuse 重跑一次即可）"))
+    print(f"\n總長 {total:.1f}s → {voice}\nprops → {out}")
 
 
 if __name__ == "__main__":

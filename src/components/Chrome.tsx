@@ -3,7 +3,7 @@ import { AbsoluteFill, Img, staticFile, useCurrentFrame, useVideoConfig } from '
 import { T } from '../theme';
 import { tw } from '../anim';
 
-/** 全片固定：Logo、頂部標題框、進度條、底部免責聲明 */
+/** 全片固定：Logo、AI 標籤、頂部標題框、進度條、底部免責聲明 */
 export const Chrome: React.FC<{ lines: string[] }> = ({ lines }) => {
   const f = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
@@ -14,6 +14,7 @@ export const Chrome: React.FC<{ lines: string[] }> = ({ lines }) => {
       <div style={{ position: 'absolute', top: 40, width: '100%', display: 'flex', justifyContent: 'center' }}>
         <Img src={staticFile(T.logo)} style={{ width: 124, height: 124, borderRadius: '50%', border: `4px solid ${T.ink}`, background: T.cream, boxShadow: '0 4px 12px rgba(0,0,0,.25)' }} />
       </div>
+      <div style={{ position: 'absolute', top: 76, right: 40, background: T.ink, color: T.cream, fontSize: 26, fontWeight: 900, padding: '8px 18px', borderRadius: 12, letterSpacing: 1 }}>AI 自動生成</div>
       <div style={{ position: 'absolute', top: 178, width: '100%', display: 'flex', justifyContent: 'center', transform: `translateY(${inY}px)` }}>
         <div style={{ background: T.cream, border: `5px solid ${T.ink}`, borderRadius: 22, padding: '14px 40px 16px', textAlign: 'center', boxShadow: `6px 6px 0 ${T.ink}` }}>
           <div style={{ color: T.ink, fontSize: 54, fontWeight: 900, lineHeight: 1.25, letterSpacing: 2 }}>{lines[0]}</div>

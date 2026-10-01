@@ -5,14 +5,12 @@ import { tw } from './anim';
 import { buildScenes, estimateSec, titleLines, Scene } from './buildScenes';
 import { Chrome } from './components/Chrome';
 import { Captions } from './components/Captions';
-import { HostBubble, HostFull } from './components/Host';
-import { AdrCard, FuturesCard, GroupsCard, IndicesCard, LevelsCard, NewsCard } from './components/Cards';
+import { AdrCard, FuturesCard, GroupsCard, IndicesCard, IntroCard, LevelsCard, NewsCard, OutroCard } from './components/Cards';
 
 export type ReelProps = {
   briefing: any;
   scenes?: Scene[];                         // 可傳入 LLM 改寫後的腳本；沒傳就用模板
   tts?: { audio: string; durations: number[] }; // public/ 下的整段語音 + 每場景秒數
-  hostVideo?: string;                        // public/ 下的整段對嘴影片（與 tts.audio 同長）
   bgm?: string;
 };
 
@@ -30,25 +28,20 @@ export const timeline = (p: ReelProps) => {
 
 const Paper = () => <AbsoluteFill style={{ background: T.cream }} />;
 
-const SceneView: React.FC<{ s: Scene; from: number; frames: number; host?: string }> = ({ s, from, frames, host }) => {
+const SceneView: React.FC<{ s: Scene; frames: number }> = ({ s, frames }) => {
   const f = useCurrentFrame();
-  const full = s.kind === 'intro' || s.kind === 'outro';
   const flash = 1 - tw(f, 0, 6, 'power1.out');
   return (
     <AbsoluteFill>
-      {full ? <HostFull video={host} startFrom={from} /> : <Paper />}
+      <Paper />
+      {s.kind === 'intro' && <IntroCard d={s.data} />}
       {s.kind === 'futures' && <FuturesCard d={s.data} />}
       {s.kind === 'indices' && <IndicesCard d={s.data} />}
       {s.kind === 'adr' && <AdrCard d={s.data} />}
       {s.kind === 'news' && <NewsCard d={s.data} />}
       {s.kind === 'groups' && <GroupsCard d={s.data} />}
       {s.kind === 'levels' && <LevelsCard d={s.data} />}
-      {!full && <HostBubble video={host} startFrom={from} />}
-      {s.kind === 'outro' && (
-        <div style={{ position: 'absolute', top: 1260, width: '100%', display: 'flex', justifyContent: 'center', opacity: tw(f, 20, 10) }}>
-          <div style={{ fontFamily: T.font, background: T.yellow, color: T.ink, fontSize: 44, fontWeight: 900, padding: '10px 30px', borderRadius: 40, border: `4px solid ${T.ink}`, boxShadow: `4px 4px 0 ${T.ink}` }}>追蹤我，每天陪你聊點股市</div>
-        </div>
-      )}
+      {s.kind === 'outro' && <OutroCard />}
       <Captions narration={s.narration} highlights={s.highlights} frames={frames} />
       <AbsoluteFill style={{ background: '#fff', opacity: flash * 0.5 }} />
     </AbsoluteFill>
@@ -61,7 +54,7 @@ export const Reel: React.FC<ReelProps> = (p) => {
     <AbsoluteFill style={{ background: '#000' }}>
       {tl.map(({ s, from, frames }) => (
         <Sequence key={s.id} from={from} durationInFrames={frames}>
-          <SceneView s={s} from={from} frames={frames} host={p.hostVideo} />
+          <SceneView s={s} frames={frames} />
         </Sequence>
       ))}
       <Chrome lines={titleLines(p.briefing)} />

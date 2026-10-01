@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCurrentFrame } from 'remotion';
+import { Img, staticFile, useCurrentFrame } from 'remotion';
 import { scaleLinear } from 'd3-scale';
 import { T, signColor } from '../theme';
 import { tw } from '../anim';
@@ -12,6 +12,42 @@ const Box: React.FC<{ children: React.ReactNode; top?: number }> = ({ children, 
 const fmt = (n: number, dec = 0) => n.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
 const n = (s: string) => parseFloat(String(s).replace(/[^\d.\-]/g, ''));
 const enter = (f: number, st: number, dy = 40) => ({ opacity: tw(f, st, 10, 'power1.out'), transform: `translateY(${tw(f, st, 16, 'power3.out', dy, 0)}px)` });
+
+/** 開場：今日開盤印章 + 本集看點清單 */
+export const IntroCard: React.FC<{ d: { outlook: string; change: string; agenda: string[] } }> = ({ d }) => {
+  const f = useCurrentFrame();
+  const c = signColor(d.change);
+  const stamp = tw(f, 6, 10, 'back.out(2.5)', 2.2, 1);
+  return (
+    <Box top={420}>
+      <div style={{ opacity: f > 6 ? 1 : 0, transform: `rotate(-6deg) scale(${stamp})`, border: `8px solid ${T.tag}`, color: T.tag, fontSize: 84, fontWeight: 900, padding: '4px 34px', borderRadius: 16, letterSpacing: 8, background: 'rgba(255,255,255,.4)' }}>{d.outlook}</div>
+      <div style={{ ...enter(f, 14), marginTop: 40, fontSize: 52, fontWeight: 900 }}>
+        夜盤 <span style={{ color: c }}>{n(d.change) >= 0 ? '▲' : '▼'} {d.change.replace(/^[+\-]/, '')} 點</span>
+      </div>
+      <div style={{ marginTop: 50, width: 760, background: '#fff', border: `4px solid ${T.ink}`, borderRadius: 20, padding: '20px 36px', boxShadow: `5px 5px 0 ${T.ink}` }}>
+        <div style={{ ...enter(f, 20, 20), fontSize: 40, fontWeight: 900, color: T.sub, marginBottom: 6 }}>今天帶你看</div>
+        {d.agenda.map((a, i) => (
+          <div key={a} style={{ ...enter(f, 24 + i * 6, 20), display: 'flex', alignItems: 'center', gap: 18, fontSize: 46, fontWeight: 900, lineHeight: 1.6 }}>
+            <span style={{ color: T.up }}>✔</span>{a}
+          </div>
+        ))}
+      </div>
+    </Box>
+  );
+};
+
+/** 結尾：大 Logo + 品牌 + 追蹤提示 */
+export const OutroCard: React.FC = () => {
+  const f = useCurrentFrame();
+  const s = tw(f, 4, 14, 'back.out(1.8)', 0.5, 1);
+  return (
+    <Box top={430}>
+      <Img src={staticFile(T.logo)} style={{ width: 380, height: 380, borderRadius: '50%', border: `8px solid ${T.ink}`, boxShadow: `10px 10px 0 ${T.yellow}`, opacity: tw(f, 4, 8), transform: `scale(${s})` }} />
+      <div style={{ ...enter(f, 14), marginTop: 50, fontSize: 80, fontWeight: 900, letterSpacing: 6 }}>{T.brand}</div>
+      <div style={{ ...enter(f, 22), marginTop: 40, background: T.yellow, fontSize: 48, fontWeight: 900, padding: '12px 36px', borderRadius: 40, border: `4px solid ${T.ink}`, boxShadow: `4px 4px 0 ${T.ink}` }}>追蹤我，每天陪你聊點股市</div>
+    </Box>
+  );
+};
 
 /** 台指期夜盤：數字滾動 + 手繪圈 + 印章 */
 export const FuturesCard: React.FC<{ d: any }> = ({ d }) => {
@@ -146,8 +182,9 @@ export const GroupsCard: React.FC<{ d: any[] }> = ({ d }) => {
 export const LevelsCard: React.FC<{ d: any }> = ({ d }) => {
   const f = useCurrentFrame();
   const lo = n(d.supportLo), hi = d.supportHi ? n(d.supportHi) : lo, res = n(d.resistance), close = n(d.close);
+  const hasSup = !isNaN(lo), hasRes = !isNaN(res);
   const H = 620, pad = 60;
-  const y = scaleLinear().domain([Math.min(lo, close) - 150, Math.max(res, close) + 150]).range([H - pad, pad]);
+  const y = scaleLinear().domain([Math.min(hasSup ? lo : close, close) - 150, Math.max(hasRes ? res : close, close) + 150]).range([H - pad, pad]);
   const line = (v: number, label: string, color: string, st: number, dash = false) => {
     const p = tw(f, st, 16, 'power3.out');
     return (
@@ -162,11 +199,11 @@ export const LevelsCard: React.FC<{ d: any }> = ({ d }) => {
     <Box>
       <Tag text="關鍵點位" sub="今日開盤觀測" />
       <svg width={960} height={H} style={{ marginTop: 20, fontFamily: T.font }}>
-        <rect x={250} y={y(hi)} width={650 * tw(f, 10, 16)} height={Math.max(8, y(lo) - y(hi))} fill="rgba(226,59,50,.14)" />
-        {line(res, '上方壓力', T.ink, 24, true)}
+        {hasSup && <rect x={250} y={y(hi)} width={650 * tw(f, 10, 16)} height={Math.max(8, y(lo) - y(hi))} fill="rgba(226,59,50,.14)" />}
+        {hasRes && line(res, '上方壓力', T.ink, 24, true)}
         {line(close, '夜盤收盤', T.up, 16)}
-        {line(hi, '支撐區上緣', T.down, 8)}
-        {hi !== lo && line(lo, '支撐區下緣', T.down, 12)}
+        {hasSup && line(hi, hi !== lo ? '支撐區上緣' : '下檔支撐', T.down, 8)}
+        {hasSup && hi !== lo && line(lo, '支撐區下緣', T.down, 12)}
       </svg>
     </Box>
   );
