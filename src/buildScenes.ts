@@ -14,7 +14,7 @@ export function parseGroups(note: string) {
     stocks: [...m[2].matchAll(/([一-鿿A-Za-z]+)\((\d{4,6})\)/g)].slice(0, 3).map((s) => ({ name: s[1], code: s[2] })),
   }));
   const lv = text.split('【開盤觀測與關鍵點位】')[1] || '';
-  const sup = lv.match(/支撐[^0-9，。；]{0,8}([\d,]{5,})(?:\s*[～~\-至到]\s*([\d,]+))?/);
+  const sup = lv.match(/支撐[^，。；]{0,20}?([\d,]{5,})(?:\s*[～~\-至到]\s*([\d,]+))?/);
   const res = lv.match(/(?:短壓|壓力|上檔|上方)[^0-9，。；]{0,8}([\d,]{5,})/);
   const spot = lv.match(/現貨.*?收在([\d,]+)點/);
   return {
@@ -56,7 +56,7 @@ export function buildScenes(b: Briefing): Scene[] {
 
   const { groups, levels } = parseGroups(b.groups_note);
   if (groups.length) S.push({ id: 'groups', kind: 'groups', narration: `今天焦點族群：${groups.map((g) => g.name).join('、')}。`, highlights: [], data: groups });
-  if (levels) S.push({ id: 'levels', kind: 'levels', narration: `下檔支撐看${levels.supportLo}${levels.supportHi ? `到${levels.supportHi}` : ''}點，上方壓力看${levels.resistance}點。`, highlights: [levels.supportLo, levels.resistance].filter(Boolean) as string[], data: { ...levels, close: b.futures_close } });
+  if (levels) S.push({ id: 'levels', kind: 'levels', narration: [levels.supportLo && `下檔支撐看${levels.supportLo}${levels.supportHi ? `到${levels.supportHi}` : ''}點`, levels.resistance && `上方壓力看${levels.resistance}點`].filter(Boolean).join('，') + '。', highlights: [levels.supportLo, levels.resistance].filter(Boolean) as string[], data: { ...levels, close: b.futures_close } });
   S.push({ id: 'outro', kind: 'outro', narration: '以上資訊僅供參考，不構成投資建議。歡迎留言或私訊你的觀察標的，我們明天盤前見！', highlights: ['不構成投資建議'] });
   return S;
 }
